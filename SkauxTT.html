@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevUnit - Modern Computer Unit Converter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darker: '#090d16',
+                        dark: '#0f172a',
+                        card: '#1e293b',
+                        bordercolor: '#334155',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-darker text-slate-100 min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black" x-data="converterApp()">
+
+    <!-- Header -->
+    <header class="border-b border-bordercolor bg-dark/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2 rounded-xl shadow-lg shadow-cyan-500/20">
+                    <i data-lucide="cpu" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">DevUnit</h1>
+                    <p class="text-xs text-slate-400">Advanced Computer & Tech Unit Converter</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button @click="activeTab = 'formula'" 
+                        :class="activeTab === 'formula' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' : 'bg-card text-slate-300 border-bordercolor hover:bg-slate-800'"
+                        class="px-3.5 py-1.5 text-xs font-medium rounded-lg border transition-all flex items-center space-x-1.5">
+                    <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+                    <span>Formula Guide</span>
+                </button>
+                <a href="https://github.com" target="_blank" class="p-2 rounded-lg bg-card border border-bordercolor text-slate-300 hover:text-white hover:bg-slate-800 transition-all">
+                    <i data-lucide="github" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        
+        <!-- Category Navigation Tabs -->
+        <div class="flex overflow-x-auto space-x-2 pb-4 mb-6 no-scrollbar">
+            <template x-for="tab in tabs" :key="tab.id">
+                <button @click="activeTab = tab.id"
+                        :class="activeTab === tab.id ? 'bg-cyan-500 text-slate-950 font-semibold shadow-lg shadow-cyan-500/25' : 'bg-card text-slate-400 hover:text-slate-200 border border-bordercolor hover:bg-slate-800'"
+                        class="px-4 py-2.5 rounded-xl text-sm transition-all flex items-center space-x-2 whitespace-nowrap">
+                    <i :data-lucide="tab.icon" class="w-4 h-4"></i>
+                    <span x-text="tab.name"></span>
+                </button>
+            </template>
+        </div>
+
+        <!-- 1. Data Storage Converter -->
+        <div x-show="activeTab === 'storage'" class="space-y-6">
+            <div class="bg-card border border-bordercolor rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-bordercolor">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="hard-drive" class="w-5 h-5 text-cyan-400"></i>
+                            <span>Data Storage Converter - Setthawut Wichapol 691540006014-4</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Convert between bits, bytes, kilobytes, megabytes, gigabytes, terabytes, and petabytes.</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <select x-model="storageStandard" @change="convertStorage()" class="bg-dark text-xs text-slate-300 border border-bordercolor rounded-lg px-3 py-1.5 focus:outline-none focus:border-cyan-500">
+                            <option value="decimal">Decimal (1000)</option>
+                            <option value="binary">Binary (1024 - KiB, MiB...)</option>
+                        </select>
+                        <button @click="resetStorage()" class="p-2 text-slate-400 hover:text-white bg-dark border border-bordercolor rounded-lg transition-all" title="Reset">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <template x-for="(unit, key) in storageUnits" :key="key">
+                        <div class="bg-dark/60 border border-bordercolor/80 rounded-xl p-4 flex flex-col justify-between hover:border-cyan-500/40 transition-all">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" x-text="unit.name"></span>
+                                <span class="text-xs font-mono px-2 py-0.5 bg-card rounded text-cyan-400 border border-bordercolor" x-text="unit.symbol"></span>
+                            </div>
+                            <div class="relative mt-1">
+                                <input type="number" 
+                                       step="any"
+                                       x-model="storageValues[key]" 
+                                       @input="handleStorageInput(key)"
+                                       class="w-full bg-darker border border-bordercolor rounded-lg px-3 py-2.5 text-white font-mono text-sm focus:outline-none focus:border-cyan-500 transition-all pr-12"
+                                       placeholder="0">
+                                <button @click="copyToClipboard(storageValues[key], key)" class="absolute right-2 top-2.5 text-slate-400 hover:text-cyan-400 p-1 transition-all" title="Copy">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Data Speed / Bandwidth Converter -->
+        <div x-show="activeTab === 'speed'" class="space-y-6" x-cloak>
+            <div class="bg-card border border-bordercolor rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-bordercolor">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="gauge" class="w-5 h-5 text-cyan-400"></i>
+                            <span>Data Transfer Speed & Bandwidth</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Convert network speeds between bits per second and bytes per second units.</p>
+                    </div>
+                    <button @click="resetSpeed()" class="p-2 text-slate-400 hover:text-white bg-dark border border-bordercolor rounded-lg transition-all" title="Reset">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <template x-for="(unit, key) in speedUnits" :key="key">
+                        <div class="bg-dark/60 border border-bordercolor/80 rounded-xl p-4 flex flex-col justify-between hover:border-cyan-500/40 transition-all">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" x-text="unit.name"></span>
+                                <span class="text-xs font-mono px-2 py-0.5 bg-card rounded text-cyan-400 border border-bordercolor" x-text="unit.symbol"></span>
+                            </div>
+                            <div class="relative mt-1">
+                                <input type="number" 
+                                       step="any"
+                                       x-model="speedValues[key]" 
+                                       @input="handleSpeedInput(key)"
+                                       class="w-full bg-darker border border-bordercolor rounded-lg px-3 py-2.5 text-white font-mono text-sm focus:outline-none focus:border-cyan-500 transition-all pr-12"
+                                       placeholder="0">
+                                <button @click="copyToClipboard(speedValues[key], key)" class="absolute right-2 top-2.5 text-slate-400 hover:text-cyan-400 p-1 transition-all" title="Copy">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Pixel & Resolution Converter -->
+        <div x-show="activeTab === 'resolution'" class="space-y-6" x-cloak>
+            <div class="bg-card border border-bordercolor rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-bordercolor">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="maximize" class="w-5 h-5 text-cyan-400"></i>
+                            <span>Resolution & Pixel Unit Converter</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Calculate dimensions, points, inches, centimeters, and DPI/PPI.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Control Panel for DPI -->
+                    <div class="bg-dark/60 border border-bordercolor rounded-xl p-5 space-y-4">
+                        <h3 class="text-sm font-semibold text-white border-b border-bordercolor pb-2">Base Configuration</h3>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Reference DPI / PPI</label>
+                            <input type="number" x-model.number="resolutionDpi" @input="updateResolution()" class="w-full bg-darker border border-bordercolor rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-cyan-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Base Pixels (px)</label>
+                            <input type="number" x-model.number="resValues.pixels" @input="handleResolutionInput('pixels')" class="w-full bg-darker border border-bordercolor rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-cyan-500">
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed">Standard screen density is typically 96 DPI for web and desktop displays.</p>
+                    </div>
+
+                    <!-- Output Fields -->
+                    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <template x-for="(unit, key) in resolutionUnits" :key="key">
+                            <div class="bg-dark/60 border border-bordercolor/80 rounded-xl p-4 flex flex-col justify-between hover:border-cyan-500/40 transition-all">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" x-text="unit.name"></span>
+                                    <span class="text-xs font-mono px-2 py-0.5 bg-card rounded text-cyan-400 border border-bordercolor" x-text="unit.symbol"></span>
+                                </div>
+                                <div class="relative mt-1">
+                                    <input type="number" 
+                                           step="any"
+                                           x-model="resValues[key]" 
+                                           @input="handleResolutionInput(key)"
+                                           class="w-full bg-darker border border-bordercolor rounded-lg px-3 py-2.5 text-white font-mono text-sm focus:outline-none focus:border-cyan-500 transition-all pr-12"
+                                           placeholder="0">
+                                    <button @click="copyToClipboard(resValues[key], key)" class="absolute right-2 top-2.5 text-slate-400 hover:text-cyan-400 p-1 transition-all" title="Copy">
+                                        <i data-lucide="copy" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. CPU Frequency Converter -->
+        <div x-show="activeTab === 'frequency'" class="space-y-6" x-cloak>
+            <div class="bg-card border border-bordercolor rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-bordercolor">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i>
+                            <span>CPU Frequency Converter</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Convert processor clock speeds between Hertz, kilohertz, megahertz, gigahertz, and terahertz.</p>
+                    </div>
+                    <button @click="resetFrequency()" class="p-2 text-slate-400 hover:text-white bg-dark border border-bordercolor rounded-lg transition-all" title="Reset">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <template x-for="(unit, key) in freqUnits" :key="key">
+                        <div class="bg-dark/60 border border-bordercolor/80 rounded-xl p-4 flex flex-col justify-between hover:border-cyan-500/40 transition-all">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" x-text="unit.name"></span>
+                                <span class="text-xs font-mono px-2 py-0.5 bg-card rounded text-cyan-400 border border-bordercolor" x-text="unit.symbol"></span>
+                            </div>
+                            <div class="relative mt-1">
+                                <input type="number" 
+                                       step="any"
+                                       x-model="freqValues[key]" 
+                                       @input="handleFrequencyInput(key)"
+                                       class="w-full bg-darker border border-bordercolor rounded-lg px-3 py-2.5 text-white font-mono text-sm focus:outline-none focus:border-cyan-500 transition-all pr-12"
+                                       placeholder="0">
+                                <button @click="copyToClipboard(freqValues[key], key)" class="absolute right-2 top-2.5 text-slate-400 hover:text-cyan-400 p-1 transition-all" title="Copy">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Color Depth & Frame Size Calculator -->
+        <div x-show="activeTab === 'color'" class="space-y-6" x-cloak>
+            <div class="bg-card border border-bordercolor rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-bordercolor">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="palette" class="w-5 h-5 text-cyan-400"></i>
+                            <span>Color Depth & Image Size Calculator</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Calculate memory footprint of images, videos, and raw frame buffers based on resolution and bit depth.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-dark/60 border border-bordercolor rounded-xl p-5 space-y-4">
+                        <h3 class="text-sm font-semibold text-white border-b border-bordercolor pb-2">Image Parameters</h3>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Width (Pixels)</label>
+                            <input type="number" x-model.number="colorParams.width" @input="calculateColorSize()" class="w-full bg-darker border border-bordercolor rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-cyan-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Height (Pixels)</label>
+                            <input type="number" x-model.number="colorParams.height" @input="calculateColorSize()" class="w-full bg-darker border border-bordercolor rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-cyan-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Color Mode / Bit Depth</label>
+                            <select x-model.number="colorParams.bpp" @change="calculateColorSize()" class="w-full bg-darker border border-bordercolor rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500">
+                                <option value="1">Monochrome (1-bit)</option>
+                                <option value="8">Grayscale / 8-bit Palette (8-bit)</option>
+                                <option value="16">High Color (16-bit)</option>
+                                <option value="24">True Color RGB (24-bit)</option>
+                                <option value="32">True Color RGBA (32-bit)</option>
+                                <option value="48">Deep Color RGB (48-bit)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-dark/60 border border-bordercolor rounded-xl p-6 flex flex-col justify-center space-y-6">
+                        <h3 class="text-sm font-semibold text-cyan-400 uppercase tracking-wider">Calculated Memory Footprint</h3>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-card border border-bordercolor p-4 rounded-xl">
+                                <span class="text-xs text-slate-400 block mb-1">Uncompressed Size (Bytes)</span>
+                                <span class="text-lg font-mono font-bold text-white" x-text="colorResults.bytesFormatted"></span>
+                            </div>
+                            <div class="bg-card border border-bordercolor p-4 rounded-xl">
+                                <span class="text-xs text-slate-400 block mb-1">Approximate Size</span>
+                                <span class="text-lg font-mono font-bold text-cyan-400" x-text="colorResults.readableSize"></span>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-slate-400 space-y-2 bg-card/50 p-4 rounded-xl border border-bordercolor">
+                            <p><strong>Formula:</strong> $\text{Width} \times \text{Height} \times (\text{Bits per Pixel} / 8) = \text{Total Bytes}$</p>
+                            <p x-text="`Total pixels: ${(colorParams.width * colorParams.height).toLocaleString()} px`"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Formula & Reference Guide -->
+        <div x-show="activeTab === 'formula'" class="space-y-6" x-cloak>
+            <div class="bg-card border border-bordercolor rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="border-b border-bordercolor pb-4">
+                    <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                        <i data-lucide="book-open" class="w-5 h-5 text-cyan-400"></i>
+                        <span>Computer Units Reference Guide</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Comprehensive breakdown of standards, multipliers, and conversion formulas used in computing.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Storage Standards -->
+                    <div class="bg-dark/60 border border-bordercolor rounded-xl p-5 space-y-3">
+                        <h3 class="font-semibold text-cyan-400 text-sm flex items-center space-x-2">
+                            <i data-lucide="hard-drive" class="w-4 h-4"></i>
+                            <span>Data Storage (Decimal vs Binary)</span>
+                        </h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Storage manufacturers typically use decimal units ($1 \text{ KB} = 1000 \text{ Bytes}$), whereas operating systems (like Windows) often use binary units ($1 \text{ KiB} = 1024 \text{ Bytes}$).
+                        </p>
+                        <ul class="text-xs text-slate-400 space-y-1 list-disc list-inside">
+                            <li>1 Byte (B) = 8 Bits (b)</li>
+                            <li>1 Kilobyte (KB) = $10^3$ Bytes = 1,000 Bytes</li>
+                            <li>1 Kibibyte (KiB) = $2^{10}$ Bytes = 1,024 Bytes</li>
+                        </ul>
+                    </div>
+
+                    <!-- Bandwidth & Transfer Speed -->
+                    <div class="bg-dark/60 border border-bordercolor rounded-xl p-5 space-y-3">
+                        <h3 class="font-semibold text-cyan-400 text-sm flex items-center space-x-2">
+                            <i data-lucide="gauge" class="w-4 h-4"></i>
+                            <span>Network Bandwidth (Bits vs Bytes)</span>
+                        </h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Internet speeds are universally advertised in bits per second (<span class="font-mono text-cyan-400">bps</span>), while file download speeds are measured in bytes per second (<span class="font-mono text-cyan-400">B/s</span>).
+                        </p>
+                        <ul class="text-xs text-slate-400 space-y-1 list-disc list-inside">
+                            <li>To convert Megabits (<span class="font-mono text-cyan-400">Mbps</span>) to Megabytes (<span class="font-mono text-cyan-400">MB/s</span>), divide by 8.</li>
+                            <li>Example: $100 \text{ Mbps} \div 8 = 12.5 \text{ MB/s}$.</li>
+                        </ul>
+                    </div>
+
+                    <!-- CPU Frequency -->
+                    <div class="bg-dark/60 border border-bordercolor rounded-xl p-5 space-y-3">
+                        <h3 class="font-semibold text-cyan-400 text-sm flex items-center space-x-2">
+                            <i data-lucide="activity" class="w-4 h-4"></i>
+                            <span>CPU Clock Frequency</span>
+                        </h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Clock rate measures the frequency at which a CPU runs cycles, scaling in factors of 1,000.
+                        </p>
+                        <ul class="text-xs text-slate-400 space-y-1 list-disc list-inside">
+                            <li>$1 \text{ kHz} = 10^3 \text{ Hz}$</li>
+                            <li>$1 \text{ MHz} = 10^6 \text{ Hz}$</li>
+                            <li>$1 \text{ GHz} = 10^9 \text{ Hz}$</li>
+                            <li>$1 \text{ THz} = 10^{12} \text{ Hz}$</li>
+                        </ul>
+                    </div>
+
+                    <!-- Resolution & DPI -->
+                    <div class="bg-dark/60 border border-bordercolor rounded-xl p-5 space-y-3">
+                        <h3 class="font-semibold text-cyan-400 text-sm flex items-center space-x-2">
+                            <i data-lucide="maximize" class="w-4 h-4"></i>
+                            <span>Resolution & Print Density</span>
+                        </h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Converts pixels to physical units based on Dots/Pixels Per Inch (DPI/PPI).
+                        </p>
+                        <ul class="text-xs text-slate-400 space-y-1 list-disc list-inside">
+                            <li>$\text{Inches} = \text{Pixels} / \text{DPI}$</li>
+                            <li>$\text{Centimeters} = \text{Inches} \times 2.54$</li>
+                            <li>$\text{Points} = \text{Inches} \times 72$</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div x-show="toast.visible" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
+         class="fixed bottom-6 right-6 z-50 bg-cyan-500 text-slate-950 px-4 py-3 rounded-xl shadow-2xl font-medium text-sm flex items-center space-x-2 border border-cyan-400"
+         style="display: none;">
+        <i data-lucide="check-circle" class="w-4 h-4"></i>
+        <span x-text="toast.message"></span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-bordercolor bg-dark/40 py-6 text-center text-xs text-slate-500">
+        <p>DevUnit Computer Converter &bull; Built with Tailwind CSS, Alpine.js & Lucide &bull; Open Source for GitHub Pages</p>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('converterApp', () => ({
+                activeTab: 'storage',
+                toast: { visible: false, message: '' },
+                
+                showToast(msg) {
+                    this.toast.message = msg;
+                    this.toast.visible = true;
+                    setTimeout(() => { this.toast.visible = false; }, 2500);
+                },
+
+                copyToClipboard(val, unitName) {
+                    if (!val && val !== 0) return;
+                    const text = val.toString();
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            this.showToast(`Copied ${text} to clipboard!`);
+                        }).catch(() => {
+                            this.fallbackCopy(text);
+                        });
+                    } else {
+                        this.fallbackCopy(text);
+                    }
+                },
+
+                fallbackCopy(text) {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        this.showToast('Copied to clipboard!');
+                    } catch (err) {
+                        this.showToast('Failed to copy');
+                    }
+                    document.body.removeChild(textArea);
+                },
+
+                // 1. Storage State & Logic
+                storageStandard: 'decimal',
+                storageUnits: {
+                    bit: { name: 'Bits', symbol: 'b', exp: -3 }, // relative to bytes or custom
+                    byte: { name: 'Bytes', symbol: 'B', exp: 0 },
+                    kb: { name: 'Kilobytes', symbol: 'KB', exp: 1 },
+                    mb: { name: 'Megabytes', symbol: 'MB', exp: 2 },
+                    gb: { name: 'Gigabytes', symbol: 'GB', exp: 3 },
+                    tb: { name: 'Terabytes', symbol: 'TB', exp: 4 },
+                    pb: { name: 'Petabytes', symbol: 'PB', exp: 5 },
+                },
+                storageValues: {
+                    bit: '', byte: 1024, kb: '', mb: '', gb: '', tb: '', pb: ''
+                },
+
+                init() {
+                    this.handleStorageInput('byte');
+                    this.handleSpeedInput('mbps');
+                    this.updateResolution();
+                    this.handleFrequencyInput('ghz');
+                    this.calculateColorSize();
+                    
+                    // Re-initialize Lucide icons after Alpine updates DOM
+                    this.$watch('activeTab', () => {
+                        setTimeout(() => { lucide.createIcons(); }, 50);
+                    });
+                    setTimeout(() => { lucide.createIcons(); }, 50);
+                },
+
+                handleStorageInput(changedKey) {
+                    const val = parseFloat(this.storageValues[changedKey]);
+                    if (isNaN(val)) {
+                        for (let k in this.storageValues) this.storageValues[k] = '';
+                        return;
+                    }
+
+                    const baseFactor = this.storageStandard === 'binary' ? 1024 : 1000;
+                    let bytes = 0;
+
+                    // Convert input to absolute Bytes first
+                    if (changedKey === 'bit') {
+                        bytes = val / 8;
+                    } else {
+                        const exp = this.storageUnits[changedKey].exp;
+                        bytes = val * Math.pow(baseFactor, exp);
+                    }
+
+                    // Populate all fields
+                    for (let k in this.storageUnits) {
+                        if (k === changedKey) continue;
+                        if (k === 'bit') {
+                            this.storageValues[k] = Number((bytes * 8).toPrecision(6));
+                        } else {
+                            const exp = this.storageUnits[k].exp;
+                            const converted = bytes / Math.pow(baseFactor, exp);
+                            this.storageValues[k] = Number(converted.toPrecision(6));
+                        }
+                    }
+                },
+
+                convertStorage() {
+                    this.handleStorageInput('byte');
+                },
+
+                resetStorage() {
+                    for (let k in this.storageValues) this.storageValues[k] = '';
+                    this.storageValues.byte = 1024;
+                    this.handleStorageInput('byte');
+                },
+
+                // 2. Speed State & Logic
+                speedUnits: {
+                    bps: { name: 'Bits / sec', symbol: 'bps', factor: 1 },
+                    kbps: { name: 'Kilobits / sec', symbol: 'Kbps', factor: 1e3 },
+                    mbps: { name: 'Megabits / sec', symbol: 'Mbps', factor: 1e6 },
+                    gbps: { name: 'Gigabits / sec', symbol: 'Gbps', factor: 1e9 },
+                    kbs: { name: 'Kilobytes / sec', symbol: 'KB/s', factor: 8e3 },
+                    mbs: { name: 'Megabytes / sec', symbol: 'MB/s', factor: 8e6 },
+                    gbs: { name: 'Gigabytes / sec', symbol: 'GB/s', factor: 8e9 },
+                },
+                speedValues: {
+                    bps: '', kbps: '', mbps: 100, gbps: '', kbs: '', mbs: '', gbs: ''
+                },
+
+                handleSpeedInput(changedKey) {
+                    const val = parseFloat(this.speedValues[changedKey]);
+                    if (isNaN(val)) {
+                        for (let k in this.speedValues) this.speedValues[k] = '';
+                        return;
+                    }
+
+                    const bpsValue = val * this.speedUnits[changedKey].factor;
+
+                    for (let k in this.speedUnits) {
+                        if (k === changedKey) continue;
+                        const converted = bpsValue / this.speedUnits[k].factor;
+                        this.speedValues[k] = Number(converted.toPrecision(6));
+                    }
+                },
+
+                resetSpeed() {
+                    for (let k in this.speedValues) this.speedValues[k] = '';
+                    this.speedValues.mbps = 100;
+                    this.handleSpeedInput('mbps');
+                },
+
+                // 3. Resolution State & Logic
+                resolutionDpi: 96,
+                resValues: {
+                    pixels: 1920,
+                    inches: '',
+                    cm: '',
+                    points: ''
+                },
+                resolutionUnits: {
+                    inches: { name: 'Inches', symbol: 'in' },
+                    cm: { name: 'Centimeters', symbol: 'cm' },
+                    points: { name: 'Postscript Points', symbol: 'pt' }
+                },
+
+                handleResolutionInput(changedKey) {
+                    const dpi = this.resolutionDpi || 96;
+                    let px = 0;
+
+                    if (changedKey === 'pixels') {
+                        px = parseFloat(this.resValues.pixels) || 0;
+                    } else if (changedKey === 'inches') {
+                        px = (parseFloat(this.resValues.inches) || 0) * dpi;
+                    } else if (changedKey === 'cm') {
+                        px = ((parseFloat(this.resValues.cm) || 0) / 2.54) * dpi;
+                    } else if (changedKey === 'points') {
+                        px = ((parseFloat(this.resValues.points) || 0) / 72) * dpi;
+                    }
+
+                    this.resValues.pixels = Number(px.toFixed(2));
+                    this.resValues.inches = Number((px / dpi).toPrecision(5));
+                    this.resValues.cm = Number(((px / dpi) * 2.54).toPrecision(5));
+                    this.resValues.points = Number(((px / dpi) * 72).toPrecision(5));
+                },
+
+                updateResolution() {
+                    this.handleResolutionInput('pixels');
+                },
+
+                // 4. Frequency State & Logic
+                freqUnits: {
+                    hz: { name: 'Hertz', symbol: 'Hz', factor: 1 },
+                    khz: { name: 'Kilohertz', symbol: 'kHz', factor: 1e3 },
+                    mhz: { name: 'Megahertz', symbol: 'MHz', factor: 1e6 },
+                    ghz: { name: 'Gigahertz', symbol: 'GHz', factor: 1e9 },
+                    thz: { name: 'Terahertz', symbol: 'THz', factor: 1e12 },
+                },
+                freqValues: {
+                    hz: '', khz: '', mhz: '', ghz: 2.5, thz: ''
+                },
+
+                handleFrequencyInput(changedKey) {
+                    const val = parseFloat(this.freqValues[changedKey]);
+                    if (isNaN(val)) {
+                        for (let k in this.freqValues) this.freqValues[k] = '';
+                        return;
+                    }
+
+                    const hzVal = val * this.freqUnits[changedKey].factor;
+
+                    for (let k in this.freqUnits) {
+                        if (k === changedKey) continue;
+                        const converted = hzVal / this.freqUnits[k].factor;
+                        this.freqValues[k] = Number(converted.toPrecision(6));
+                    }
+                },
+
+                resetFrequency() {
+                    for (let k in this.freqValues) this.freqValues[k] = '';
+                    this.freqValues.ghz = 2.5;
+                    this.handleFrequencyInput('ghz');
+                },
+
+                // 5. Color Depth & Frame Size Calculator
+                colorParams: {
+                    width: 1920,
+                    height: 1080,
+                    bpp: 24
+                },
+                colorResults: {
+                    bytesFormatted: '0',
+                    readableSize: '0 MB'
+                },
+
+                calculateColorSize() {
+                    const w = parseFloat(this.colorParams.width) || 0;
+                    const h = parseFloat(this.colorParams.height) || 0;
+                    const bpp = parseFloat(this.colorParams.bpp) || 24;
+
+                    const totalBits = w * h * bpp;
+                    const totalBytes = totalBits / 8;
+
+                    this.colorResults.bytesFormatted = totalBytes.toLocaleString() + ' Bytes';
+
+                    // Human readable storage conversion
+                    if (totalBytes < 1024) {
+                        this.colorResults.readableSize = totalBytes.toFixed(2) + ' Bytes';
+                    } else if (totalBytes < 1024 * 1024) {
+                        this.colorResults.readableSize = (totalBytes / 1024).toFixed(2) + ' KB';
+                    } else if (totalBytes < 1024 * 1024 * 1024) {
+                        this.colorResults.readableSize = (totalBytes / (1024 * 1024)).toFixed(2) + ' MB';
+                    } else {
+                        this.colorResults.readableSize = (totalBytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+                    }
+                }
+            }));
+        });
+    </script>
+</body>
+</html>
